@@ -18,7 +18,7 @@ st.write("Upload a hand X-ray image to detect fractures using your local YOLO mo
 # -------------------------------
 # LOAD LOCAL MODEL
 # -------------------------------
-MODEL_PATH = r"C:\Users\dhanak\PycharmProjects\PythonProject10\best.pt"  # <-- Change path if needed
+MODEL_PATH = r"best.pt"  # <-- Change path if needed
 
 
 @st.cache_resource
