@@ -1,7 +1,13 @@
+import os
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
-import tempfile, os
+import tempfile
+
+# -------------------------------
+# YOLO CONFIG DIR (deployment-safe)
+# -------------------------------
+os.environ["YOLO_CONFIG_DIR"] = "/tmp/Ultralytics"
 
 # -------------------------------
 # PAGE CONFIG
@@ -35,7 +41,7 @@ except ImportError:
     st.stop()
 
 # -------------------------------
-# LOAD MODEL
+# LOAD YOLO MODEL
 # -------------------------------
 @st.cache_resource
 def load_model():
@@ -64,7 +70,10 @@ if model is None:
 uploaded_file = st.file_uploader("📸 Upload a Hand X-ray image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
+    # Display uploaded image
     st.image(uploaded_file, caption="Uploaded Image", width='stretch')
+
+    # Save temporarily for YOLO prediction
     suffix = os.path.splitext(uploaded_file.name)[1]
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(uploaded_file.read())
@@ -78,7 +87,7 @@ if uploaded_file:
         st.success("✅ Detection complete!")
 
         # -------------------------------
-        # SHOW DETAILS
+        # SHOW PREDICTION DETAILS
         # -------------------------------
         st.subheader("📊 Prediction Details:")
         if results[0].boxes and len(results[0].boxes) > 0:
@@ -104,6 +113,7 @@ if uploaded_file:
     except Exception as e:
         st.error(f"Prediction failed: {e}")
 
+    # Clean up temp file
     os.remove(temp_path)
 else:
     st.info("Please upload a hand X-ray image to start detection.")
