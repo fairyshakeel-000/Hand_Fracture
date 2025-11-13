@@ -64,7 +64,7 @@ if model is None:
 uploaded_file = st.file_uploader("📸 Upload a Hand X-ray image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
-    st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
+    st.image(uploaded_file, caption="Uploaded Image", width='stretch')
     suffix = os.path.splitext(uploaded_file.name)[1]
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(uploaded_file.read())
@@ -74,7 +74,7 @@ if uploaded_file:
     try:
         results = model.predict(temp_path)
         annotated_img = results[0].plot()
-        st.image(annotated_img, caption="Detection Result", use_container_width=True)
+        st.image(annotated_img, caption="Detection Result", width='stretch')
         st.success("✅ Detection complete!")
 
         # -------------------------------
