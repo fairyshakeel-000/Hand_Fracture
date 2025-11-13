@@ -18,12 +18,28 @@ st.write("Upload a hand X-ray image to detect fractures using your YOLO model.")
 MODEL_PATH = r"best.pt"
 
 # -------------------------------
-# LOAD MODEL (PyTorch 2.6+ safe)
+# CHECK REQUIRED LIBRARIES
+# -------------------------------
+try:
+    import numpy as np
+except ImportError:
+    st.error("""
+    ❌ NumPy is not installed!
+    This library is required for YOLO predictions.
+    
+    Fix this by running:
+    ```
+    pip install numpy
+    ```
+    """)
+    st.stop()
+
+# -------------------------------
+# LOAD MODEL
 # -------------------------------
 @st.cache_resource
 def load_model():
     try:
-        # Load the YOLO model (must be re-exported for PyTorch 2.6+)
         model = YOLO(MODEL_PATH)
         st.success("✅ Model loaded successfully!")
         return model
@@ -37,7 +53,6 @@ def load_model():
             yolo export model=best.pt format=pt
         """)
         return None
-
 
 model = load_model()
 if model is None:
