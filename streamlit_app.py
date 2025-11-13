@@ -1,3 +1,9 @@
+import torch
+from ultralytics.nn.tasks import DetectionModel
+
+# Allow YOLO model loading with PyTorch 2.6+
+torch.serialization.add_safe_globals([DetectionModel])
+
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
@@ -18,8 +24,7 @@ st.write("Upload a hand X-ray image to detect fractures using your local YOLO mo
 # -------------------------------
 # LOAD LOCAL MODEL
 # -------------------------------
-MODEL_PATH = r"best.pt"  # <-- Change path if needed
-
+MODEL_PATH = "best.pt"  # Make sure 'best.pt' is in the same folder as this file
 
 @st.cache_resource
 def load_model():
@@ -29,7 +34,6 @@ def load_model():
     except Exception as e:
         st.error(f"❌ Model loading failed: {e}")
         return None
-
 
 model = load_model()
 if model is None:
