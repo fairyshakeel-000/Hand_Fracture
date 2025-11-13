@@ -1,7 +1,7 @@
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
-import tempfile, os, torch
+import tempfile, os
 
 # -------------------------------
 # PAGE CONFIG
@@ -18,27 +18,22 @@ st.write("Upload a hand X-ray image to detect fractures using your YOLO model.")
 MODEL_PATH = r"best.pt"
 
 # -------------------------------
-# LOAD MODEL (fixed for PyTorch 2.6+)
+# LOAD MODEL (PyTorch 2.6+ safe)
 # -------------------------------
 @st.cache_resource
 def load_model():
     try:
-        # ✅ Add YOLO + Sequential classes to allowed globals (safe for Streamlit)
-        torch.serialization.add_safe_globals([
-            torch.nn.modules.container.Sequential,
-            torch.nn.modules.module.Module,
-        ])
+        # Load the YOLO model (must be re-exported for PyTorch 2.6+)
         model = YOLO(MODEL_PATH)
         st.success("✅ Model loaded successfully!")
         return model
-
     except Exception as e:
         st.error(f"❌ Model loading failed:\n\n{e}")
         st.warning("""
-        This error is related to PyTorch 2.6+ weight loading rules. 
-        Try this:
-        1️⃣ Ensure your model file is trusted (e.g., your own training)
-        2️⃣ If still failing, re-export YOLO model with:
+        This error is usually caused by PyTorch 2.6+ compatibility.
+        Steps to fix:
+        1️⃣ Ensure the model file is trusted (your own training).
+        2️⃣ Re-export the YOLO model for safe loading:
             yolo export model=best.pt format=pt
         """)
         return None
