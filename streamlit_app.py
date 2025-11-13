@@ -4,10 +4,7 @@ from ultralytics import YOLO
 from PIL import Image
 import tempfile, os
 
-# ==========================================
-# FIX FOR PYTORCH 2.6+ MODEL LOADING ERROR ⚙️
-# ==========================================
-torch.serialization.add_safe_globals([torch.nn.modules.container.Sequential])
+
 
 # -------------------------------
 # PAGE CONFIG
