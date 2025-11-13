@@ -1,10 +1,7 @@
 import streamlit as st
-import torch
 from ultralytics import YOLO
 from PIL import Image
-import tempfile, os
-
-
+import tempfile, os, torch
 
 # -------------------------------
 # PAGE CONFIG
@@ -16,22 +13,34 @@ st.set_page_config(
 )
 
 st.title("🖐️ Hand Fracture Detection App")
-st.write("Upload a hand X-ray image to detect fractures using your local YOLO model.")
+st.write("Upload a hand X-ray image to detect fractures using your YOLO model.")
+
+MODEL_PATH = r"best.pt"
 
 # -------------------------------
-# LOAD LOCAL MODEL
+# LOAD MODEL (fixed for PyTorch 2.6+)
 # -------------------------------
-MODEL_PATH = r"best.pt"  # <-- Change path if needed
-
-
 @st.cache_resource
 def load_model():
     try:
+        # ✅ Add YOLO + Sequential classes to allowed globals (safe for Streamlit)
+        torch.serialization.add_safe_globals([
+            torch.nn.modules.container.Sequential,
+            torch.nn.modules.module.Module,
+        ])
         model = YOLO(MODEL_PATH)
         st.success("✅ Model loaded successfully!")
         return model
+
     except Exception as e:
         st.error(f"❌ Model loading failed:\n\n{e}")
+        st.warning("""
+        This error is related to PyTorch 2.6+ weight loading rules. 
+        Try this:
+        1️⃣ Ensure your model file is trusted (e.g., your own training)
+        2️⃣ If still failing, re-export YOLO model with:
+            yolo export model=best.pt format=pt
+        """)
         return None
 
 
@@ -46,16 +55,11 @@ uploaded_file = st.file_uploader("📸 Upload a Hand X-ray image", type=["jpg", 
 
 if uploaded_file:
     st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
-
-    # Save temporarily
     suffix = os.path.splitext(uploaded_file.name)[1]
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(uploaded_file.read())
         temp_path = tmp.name
 
-    # -------------------------------
-    # RUN DETECTION
-    # -------------------------------
     st.subheader("🔍 Detecting fractures...")
     try:
         results = model.predict(temp_path)
@@ -64,16 +68,15 @@ if uploaded_file:
         st.success("✅ Detection complete!")
 
         # -------------------------------
-        # SHOW PREDICTION DETAILS + COORDINATES
+        # SHOW DETAILS
         # -------------------------------
         st.subheader("📊 Prediction Details:")
         if results[0].boxes and len(results[0].boxes) > 0:
             for i, box in enumerate(results[0].boxes):
                 cls_id = int(box.cls[0])
                 conf = float(box.conf[0])
-                class_name = model.names.get(cls_id, f"Class {cls_id}") if hasattr(model, "names") else f"Class {cls_id}"
+                class_name = model.names.get(cls_id, f"Class {cls_id}")
 
-                # Extract coordinates (x1, y1, x2, y2)
                 x1, y1, x2, y2 = map(float, box.xyxy[0])
                 width, height = x2 - x1, y2 - y1
 
@@ -88,18 +91,12 @@ if uploaded_file:
                 """)
         else:
             st.info("No fractures detected.")
-
     except Exception as e:
         st.error(f"Prediction failed: {e}")
 
-    # Clean up temp file
     os.remove(temp_path)
-
 else:
     st.info("Please upload a hand X-ray image to start detection.")
 
-# -------------------------------
-# FOOTER
-# -------------------------------
 st.markdown("---")
 st.markdown("💡 *Powered by Ultralytics YOLO & Streamlit*")
