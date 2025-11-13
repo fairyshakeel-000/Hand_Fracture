@@ -1,13 +1,13 @@
-import torch
-from ultralytics.nn.tasks import DetectionModel
-
-# Allow YOLO model loading with PyTorch 2.6+
-torch.serialization.add_safe_globals([DetectionModel])
-
 import streamlit as st
+import torch
 from ultralytics import YOLO
 from PIL import Image
 import tempfile, os
+
+# ==========================================
+# FIX FOR PYTORCH 2.6+ MODEL LOADING ERROR ⚙️
+# ==========================================
+torch.serialization.add_safe_globals([torch.nn.modules.container.Sequential])
 
 # -------------------------------
 # PAGE CONFIG
@@ -24,16 +24,19 @@ st.write("Upload a hand X-ray image to detect fractures using your local YOLO mo
 # -------------------------------
 # LOAD LOCAL MODEL
 # -------------------------------
-MODEL_PATH = "best.pt"  # Make sure 'best.pt' is in the same folder as this file
+MODEL_PATH = r"best.pt"  # <-- Change path if needed
+
 
 @st.cache_resource
 def load_model():
     try:
         model = YOLO(MODEL_PATH)
+        st.success("✅ Model loaded successfully!")
         return model
     except Exception as e:
-        st.error(f"❌ Model loading failed: {e}")
+        st.error(f"❌ Model loading failed:\n\n{e}")
         return None
+
 
 model = load_model()
 if model is None:
@@ -71,7 +74,7 @@ if uploaded_file:
             for i, box in enumerate(results[0].boxes):
                 cls_id = int(box.cls[0])
                 conf = float(box.conf[0])
-                class_name = model.names[cls_id] if model.names else f"Class {cls_id}"
+                class_name = model.names.get(cls_id, f"Class {cls_id}") if hasattr(model, "names") else f"Class {cls_id}"
 
                 # Extract coordinates (x1, y1, x2, y2)
                 x1, y1, x2, y2 = map(float, box.xyxy[0])
@@ -92,7 +95,7 @@ if uploaded_file:
     except Exception as e:
         st.error(f"Prediction failed: {e}")
 
-    # Clean up
+    # Clean up temp file
     os.remove(temp_path)
 
 else:
