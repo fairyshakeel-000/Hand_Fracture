@@ -1,5 +1,5 @@
 streamlit
-ultralytics==8.2.50
+ultralytics
 pillow
 numpy
 torch
